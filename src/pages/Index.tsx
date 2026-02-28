@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
@@ -5,15 +6,30 @@ import { Users, Building2, HardHat, FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getClientes, getObras, getEquipe, getLaudos } from "@/lib/store";
+import { Cliente, Obra, MembroEquipe, Laudo } from "@/lib/types";
 
 const Dashboard = () => {
-  const clientes = getClientes();
-  const obras = getObras();
-  const equipe = getEquipe();
-  const laudos = getLaudos();
   const navigate = useNavigate();
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
+  const [equipe, setEquipe] = useState<MembroEquipe[]>([]);
+  const [laudos, setLaudos] = useState<Laudo[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const recentLaudos = laudos.slice(-5).reverse();
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [c, o, e, l] = await Promise.all([getClientes(), getObras(), getEquipe(), getLaudos()]);
+        setClientes(c); setObras(o); setEquipe(e); setLaudos(l);
+      } catch { /* silent */ }
+      finally { setLoading(false); }
+    };
+    load();
+  }, []);
+
+  const recentLaudos = laudos.slice(0, 5);
+
+  if (loading) return <p className="text-center py-12 text-muted-foreground">Carregando...</p>;
 
   return (
     <div>
@@ -47,8 +63,8 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-3">
                 {recentLaudos.map((laudo) => {
-                  const obra = getObras().find(o => o.id === laudo.obraId);
-                  const cliente = getClientes().find(c => c.id === laudo.clienteId);
+                  const obra = obras.find(o => o.id === laudo.obraId);
+                  const cliente = clientes.find(c => c.id === laudo.clienteId);
                   return (
                     <div
                       key={laudo.id}

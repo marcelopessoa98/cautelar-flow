@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { Obra } from "@/lib/types";
+import { Obra, Cliente } from "@/lib/types";
 import { getObras, saveObra, deleteObra, getClientes } from "@/lib/store";
 import { toast } from "sonner";
 
@@ -23,33 +23,60 @@ const emptyObra = (): Obra => ({
 });
 
 const ObrasPage = () => {
-  const [obras, setObras] = useState(getObras());
-  const clientes = getClientes();
+  const [obras, setObras] = useState<Obra[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Obra | null>(null);
   const [form, setForm] = useState<Obra>(emptyObra());
 
-  const refresh = () => setObras(getObras());
+  const refresh = async () => {
+    try {
+      const [o, c] = await Promise.all([getObras(), getClientes()]);
+      setObras(o);
+      setClientes(c);
+    } catch (e: any) {
+      toast.error("Erro ao carregar: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSave = () => {
+  useEffect(() => { refresh(); }, []);
+
+  const handleSave = async () => {
     if (!form.nome || !form.clienteId) {
       toast.error("Nome e Cliente são obrigatórios");
       return;
     }
-    saveObra(form);
-    toast.success(editing ? "Obra atualizada" : "Obra cadastrada");
-    setOpen(false); setEditing(null); setForm(emptyObra());
-    refresh();
+    try {
+      await saveObra(form);
+      toast.success(editing ? "Obra atualizada" : "Obra cadastrada");
+      setOpen(false); setEditing(null); setForm(emptyObra());
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao salvar: " + e.message);
+    }
   };
 
   const handleEdit = (o: Obra) => { setEditing(o); setForm({ ...o }); setOpen(true); };
-  const handleDelete = (id: string) => { deleteObra(id); toast.success("Obra removida"); refresh(); };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteObra(id);
+      toast.success("Obra removida");
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + e.message);
+    }
+  };
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) { setEditing(null); setForm(emptyObra()); }
   };
 
   const clienteNome = (id: string) => clientes.find(c => c.id === id)?.razaoSocial || "—";
+
+  if (loading) return <p className="text-center py-12 text-muted-foreground">Carregando...</p>;
 
   return (
     <div>
