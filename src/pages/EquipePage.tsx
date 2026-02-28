@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,26 +18,51 @@ const emptyMembro = (): MembroEquipe => ({
 });
 
 const EquipePage = () => {
-  const [equipe, setEquipe] = useState(getEquipe());
+  const [equipe, setEquipe] = useState<MembroEquipe[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<MembroEquipe | null>(null);
   const [form, setForm] = useState<MembroEquipe>(emptyMembro());
 
-  const refresh = () => setEquipe(getEquipe());
+  const refresh = async () => {
+    try {
+      setEquipe(await getEquipe());
+    } catch (e: any) {
+      toast.error("Erro ao carregar: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSave = () => {
+  useEffect(() => { refresh(); }, []);
+
+  const handleSave = async () => {
     if (!form.nome || !form.cargo) { toast.error("Nome e Cargo são obrigatórios"); return; }
-    saveMembro(form);
-    toast.success(editing ? "Membro atualizado" : "Membro cadastrado");
-    setOpen(false); setEditing(null); setForm(emptyMembro()); refresh();
+    try {
+      await saveMembro(form);
+      toast.success(editing ? "Membro atualizado" : "Membro cadastrado");
+      setOpen(false); setEditing(null); setForm(emptyMembro()); refresh();
+    } catch (e: any) {
+      toast.error("Erro ao salvar: " + e.message);
+    }
   };
 
   const handleEdit = (m: MembroEquipe) => { setEditing(m); setForm({ ...m }); setOpen(true); };
-  const handleDelete = (id: string) => { deleteMembro(id); toast.success("Membro removido"); refresh(); };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMembro(id);
+      toast.success("Membro removido");
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + e.message);
+    }
+  };
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) { setEditing(null); setForm(emptyMembro()); }
   };
+
+  if (loading) return <p className="text-center py-12 text-muted-foreground">Carregando...</p>;
 
   return (
     <div>

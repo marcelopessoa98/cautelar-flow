@@ -5,20 +5,41 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Eye, Trash2 } from "lucide-react";
 import { getLaudos, getObras, getClientes, deleteLaudo } from "@/lib/store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { Laudo, Obra, Cliente } from "@/lib/types";
 
 const LaudosPage = () => {
   const navigate = useNavigate();
-  const [laudos, setLaudos] = useState(getLaudos());
-  const obras = getObras();
-  const clientes = getClientes();
+  const [laudos, setLaudos] = useState<Laudo[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleDelete = (id: string) => {
-    deleteLaudo(id);
-    setLaudos(getLaudos());
-    toast.success("Laudo removido");
+  const refresh = async () => {
+    try {
+      const [l, o, c] = await Promise.all([getLaudos(), getObras(), getClientes()]);
+      setLaudos(l); setObras(o); setClientes(c);
+    } catch (e: any) {
+      toast.error("Erro ao carregar: " + e.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => { refresh(); }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteLaudo(id);
+      toast.success("Laudo removido");
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + e.message);
+    }
+  };
+
+  if (loading) return <p className="text-center py-12 text-muted-foreground">Carregando...</p>;
 
   return (
     <div>

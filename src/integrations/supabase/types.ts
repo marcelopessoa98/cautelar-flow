@@ -14,7 +14,206 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clientes: {
+        Row: {
+          cpf_cnpj: string
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          razao_social: string
+          status: string
+          telefones: string | null
+          updated_at: string
+        }
+        Insert: {
+          cpf_cnpj: string
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          razao_social: string
+          status?: string
+          telefones?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cpf_cnpj?: string
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          razao_social?: string
+          status?: string
+          telefones?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      equipe: {
+        Row: {
+          assinatura_url: string | null
+          cargo: string | null
+          crea: string | null
+          created_at: string
+          formacao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          assinatura_url?: string | null
+          cargo?: string | null
+          crea?: string | null
+          created_at?: string
+          formacao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          assinatura_url?: string | null
+          cargo?: string | null
+          crea?: string | null
+          created_at?: string
+          formacao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      laudos: {
+        Row: {
+          avaliacao_final: string | null
+          caracteristicas: Json | null
+          cliente_id: string
+          created_at: string
+          endereco_imovel_vistoriado: string | null
+          equipe_ids: string[] | null
+          figura_fluxograma: string | null
+          figura_localizacao: string | null
+          fotos: Json | null
+          id: string
+          objetivo: string | null
+          obra_id: string
+          status: string
+          tipo_imovel: string | null
+          tipo_ocupacao: string | null
+          updated_at: string
+          vias_acesso: string | null
+        }
+        Insert: {
+          avaliacao_final?: string | null
+          caracteristicas?: Json | null
+          cliente_id: string
+          created_at?: string
+          endereco_imovel_vistoriado?: string | null
+          equipe_ids?: string[] | null
+          figura_fluxograma?: string | null
+          figura_localizacao?: string | null
+          fotos?: Json | null
+          id?: string
+          objetivo?: string | null
+          obra_id: string
+          status?: string
+          tipo_imovel?: string | null
+          tipo_ocupacao?: string | null
+          updated_at?: string
+          vias_acesso?: string | null
+        }
+        Update: {
+          avaliacao_final?: string | null
+          caracteristicas?: Json | null
+          cliente_id?: string
+          created_at?: string
+          endereco_imovel_vistoriado?: string | null
+          equipe_ids?: string[] | null
+          figura_fluxograma?: string | null
+          figura_localizacao?: string | null
+          fotos?: Json | null
+          id?: string
+          objetivo?: string | null
+          obra_id?: string
+          status?: string
+          tipo_imovel?: string | null
+          tipo_ocupacao?: string | null
+          updated_at?: string
+          vias_acesso?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "laudos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laudos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras: {
+        Row: {
+          bairro: string | null
+          cidade: string | null
+          cliente_id: string
+          created_at: string
+          data_inicio: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          previsao_termino: string | null
+          referencia: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bairro?: string | null
+          cidade?: string | null
+          cliente_id: string
+          created_at?: string
+          data_inicio?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          previsao_termino?: string | null
+          referencia?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bairro?: string | null
+          cidade?: string | null
+          cliente_id?: string
+          created_at?: string
+          data_inicio?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          previsao_termino?: string | null
+          referencia?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { getClientes, getObras, getEquipe, saveLaudo } from "@/lib/store";
 import {
-  Laudo, FotoMemorial, CaracteristicasImovel,
+  Laudo, FotoMemorial, CaracteristicasImovel, Cliente, Obra, MembroEquipe,
   TIPOS_IMOVEL, PADROES_CONSTRUTIVOS, ESTRUTURAS, VEDACOES,
   ACABAMENTOS_PISO, ACABAMENTOS_PAREDE, COBERTURAS, TIPOS_OCUPACAO,
 } from "@/lib/types";
@@ -34,9 +34,11 @@ Por fim, os responsáveis da contratada, contratante e o proprietário do imóve
 
 const NovoLaudoPage = () => {
   const navigate = useNavigate();
-  const clientes = getClientes().filter(c => c.status === "ativo");
-  const obras = getObras();
-  const equipe = getEquipe();
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
+  const [equipeList, setEquipeList] = useState<MembroEquipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [step, setStep] = useState(0);
   const [obraId, setObraId] = useState("");
@@ -55,6 +57,22 @@ const NovoLaudoPage = () => {
   const [figFlux, setFigFlux] = useState<string>("");
   const [fotos, setFotos] = useState<FotoMemorial[]>([]);
   const [avaliacao, setAvaliacao] = useState(AVALIACAO_PADRAO);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [c, o, e] = await Promise.all([getClientes(), getObras(), getEquipe()]);
+        setClientes(c.filter(cl => cl.status === 'ativo'));
+        setObras(o);
+        setEquipeList(e);
+      } catch (e: any) {
+        toast.error("Erro ao carregar dados: " + e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const obrasFiltradas = clienteId ? obras.filter(o => o.clienteId === clienteId) : obras;
   const selectedObra = obras.find(o => o.id === obraId);
@@ -100,29 +118,38 @@ const NovoLaudoPage = () => {
     setFotos(prev => prev.filter(f => f.id !== id).map((f, i) => ({ ...f, numero: i + 1 })));
   };
 
-  const handleSave = (status: 'rascunho' | 'completo') => {
+  const handleSave = async (status: 'rascunho' | 'completo') => {
     if (!obraId || !clienteId) { toast.error("Selecione obra e cliente"); return; }
     if (status === 'completo' && !enderecoVistoriado) { toast.error("Endereço do imóvel vistoriado é obrigatório"); return; }
 
-    const laudo: Laudo = {
-      id: crypto.randomUUID(),
-      obraId, clienteId,
-      enderecoImovelVistoriado: enderecoVistoriado,
-      tipoImovel, objetivo, tipoOcupacao, viasAcesso,
-      caracteristicas: { ...caracteristicas, tipoImovel },
-      equipeIds,
-      figuraLocalizacao: figLoc || undefined,
-      figuraFluxograma: figFlux || undefined,
-      fotos,
-      avaliacaoFinal: avaliacao,
-      status,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveLaudo(laudo);
-    toast.success(status === 'completo' ? "Laudo criado com sucesso!" : "Rascunho salvo");
-    navigate("/laudos");
+    setSaving(true);
+    try {
+      const laudo: Laudo = {
+        id: crypto.randomUUID(),
+        obraId, clienteId,
+        enderecoImovelVistoriado: enderecoVistoriado,
+        tipoImovel, objetivo, tipoOcupacao, viasAcesso,
+        caracteristicas: { ...caracteristicas, tipoImovel },
+        equipeIds,
+        figuraLocalizacao: figLoc || undefined,
+        figuraFluxograma: figFlux || undefined,
+        fotos,
+        avaliacaoFinal: avaliacao,
+        status,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      await saveLaudo(laudo);
+      toast.success(status === 'completo' ? "Laudo criado com sucesso!" : "Rascunho salvo");
+      navigate("/laudos");
+    } catch (e: any) {
+      toast.error("Erro ao salvar laudo: " + e.message);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) return <p className="text-center py-12 text-muted-foreground">Carregando...</p>;
 
   return (
     <div>
@@ -322,11 +349,11 @@ const NovoLaudoPage = () => {
           <Card>
             <CardHeader><CardTitle>Equipe Técnica</CardTitle></CardHeader>
             <CardContent>
-              {equipe.length === 0 ? (
+              {equipeList.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Cadastre membros na seção Equipe Técnica primeiro.</p>
               ) : (
                 <div className="space-y-3">
-                  {equipe.map(m => (
+                  {equipeList.map(m => (
                     <label key={m.id} className="flex items-center gap-3 p-3 rounded-md border hover:bg-muted/50 cursor-pointer transition-colors">
                       <Checkbox
                         checked={equipeIds.includes(m.id)}
@@ -360,16 +387,16 @@ const NovoLaudoPage = () => {
           <ArrowLeft size={16} /> Anterior
         </Button>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => handleSave('rascunho')} className="gap-2">
-            <Save size={16} /> Salvar Rascunho
+          <Button variant="secondary" onClick={() => handleSave('rascunho')} disabled={saving} className="gap-2">
+            <Save size={16} /> {saving ? "Salvando..." : "Salvar Rascunho"}
           </Button>
           {step < STEPS.length - 1 ? (
             <Button onClick={() => setStep(s => s + 1)} className="gap-2">
               Próximo <ArrowRight size={16} />
             </Button>
           ) : (
-            <Button onClick={() => handleSave('completo')} className="gap-2">
-              <Save size={16} /> Finalizar Laudo
+            <Button onClick={() => handleSave('completo')} disabled={saving} className="gap-2">
+              <Save size={16} /> {saving ? "Salvando..." : "Finalizar Laudo"}
             </Button>
           )}
         </div>

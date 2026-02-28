@@ -1,17 +1,45 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLaudos, getObras, getClientes, getEquipe } from "@/lib/store";
+import { Laudo, Obra, Cliente, MembroEquipe } from "@/lib/types";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 const LaudoDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const laudo = getLaudos().find(l => l.id === id);
-  const obra = laudo ? getObras().find(o => o.id === laudo.obraId) : null;
-  const cliente = laudo ? getClientes().find(c => c.id === laudo.clienteId) : null;
-  const equipe = getEquipe();
+  const [laudo, setLaudo] = useState<Laudo | null>(null);
+  const [obra, setObra] = useState<Obra | null>(null);
+  const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [membros, setMembros] = useState<MembroEquipe[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [laudos, obras, clientes, equipe] = await Promise.all([
+          getLaudos(), getObras(), getClientes(), getEquipe()
+        ]);
+        const found = laudos.find(l => l.id === id);
+        if (found) {
+          setLaudo(found);
+          setObra(obras.find(o => o.id === found.obraId) || null);
+          setCliente(clientes.find(c => c.id === found.clienteId) || null);
+          setMembros(equipe.filter(m => found.equipeIds.includes(m.id)));
+        }
+      } catch (e: any) {
+        toast.error("Erro ao carregar: " + e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
+
+  if (loading) return <p className="text-center py-12 text-muted-foreground">Carregando...</p>;
 
   if (!laudo) {
     return (
@@ -21,8 +49,6 @@ const LaudoDetailPage = () => {
       </div>
     );
   }
-
-  const membros = equipe.filter(m => laudo.equipeIds.includes(m.id));
 
   return (
     <div>

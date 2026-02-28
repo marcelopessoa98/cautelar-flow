@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,24 +24,39 @@ const emptyCliente = (): Cliente => ({
 });
 
 const ClientesPage = () => {
-  const [clientes, setClientes] = useState(getClientes());
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
   const [form, setForm] = useState<Cliente>(emptyCliente());
 
-  const refresh = () => setClientes(getClientes());
+  const refresh = async () => {
+    try {
+      setClientes(await getClientes());
+    } catch (e: any) {
+      toast.error("Erro ao carregar clientes: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSave = () => {
+  useEffect(() => { refresh(); }, []);
+
+  const handleSave = async () => {
     if (!form.razaoSocial || !form.cpfCnpj) {
       toast.error("Razão Social e CPF/CNPJ são obrigatórios");
       return;
     }
-    saveCliente(form);
-    toast.success(editing ? "Cliente atualizado" : "Cliente cadastrado");
-    setOpen(false);
-    setEditing(null);
-    setForm(emptyCliente());
-    refresh();
+    try {
+      await saveCliente(form);
+      toast.success(editing ? "Cliente atualizado" : "Cliente cadastrado");
+      setOpen(false);
+      setEditing(null);
+      setForm(emptyCliente());
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao salvar: " + e.message);
+    }
   };
 
   const handleEdit = (c: Cliente) => {
@@ -50,16 +65,22 @@ const ClientesPage = () => {
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    deleteCliente(id);
-    toast.success("Cliente removido");
-    refresh();
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteCliente(id);
+      toast.success("Cliente removido");
+      refresh();
+    } catch (e: any) {
+      toast.error("Erro ao remover: " + e.message);
+    }
   };
 
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) { setEditing(null); setForm(emptyCliente()); }
   };
+
+  if (loading) return <p className="text-center py-12 text-muted-foreground">Carregando...</p>;
 
   return (
     <div>
