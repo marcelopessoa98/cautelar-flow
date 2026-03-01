@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLaudos, getObras, getClientes, getEquipe } from "@/lib/store";
 import { Laudo, Obra, Cliente, MembroEquipe } from "@/lib/types";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { generateLaudoPdf } from "@/lib/generateLaudoPdf";
 
 const LaudoDetailPage = () => {
   const { id } = useParams();
@@ -16,6 +17,20 @@ const LaudoDetailPage = () => {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [membros, setMembros] = useState<MembroEquipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportPdf = async () => {
+    if (!laudo) return;
+    setExporting(true);
+    try {
+      await generateLaudoPdf(laudo, obra, cliente, membros);
+      toast.success("PDF exportado com sucesso!");
+    } catch (e: any) {
+      toast.error("Erro ao gerar PDF: " + e.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -56,9 +71,14 @@ const LaudoDetailPage = () => {
         title={`Laudo — ${obra?.nome || "Obra"}`}
         description={`Cliente: ${cliente?.razaoSocial || "—"}`}
         action={
-          <Button variant="outline" onClick={() => navigate("/laudos")} className="gap-2">
-            <ArrowLeft size={16} /> Voltar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/laudos")} className="gap-2">
+              <ArrowLeft size={16} /> Voltar
+            </Button>
+            <Button onClick={handleExportPdf} disabled={exporting} className="gap-2">
+              <FileDown size={16} /> {exporting ? "Gerando..." : "Exportar PDF"}
+            </Button>
+          </div>
         }
       />
 
