@@ -111,3 +111,28 @@
     @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
   }
 }
+
+/* ═══════════════════════════════════════════ */
+/* Print styles for Laudo Cautelar PDF export */
+/* ═══════════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm 15mm 25mm 15mm;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-color-adjust-exact {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide non-print elements */
+  nav, .sidebar, header:not(.print-header), footer:not(.print-footer) {
+    display: none !important;
+  }
+}
