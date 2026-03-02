@@ -11,6 +11,7 @@ import EquipePage from "./pages/EquipePage";
 import LaudosPage from "./pages/LaudosPage";
 import NovoLaudoPage from "./pages/NovoLaudoPage";
 import LaudoDetailPage from "./pages/LaudoDetailPage";
+import LaudoPrintPage from "./pages/LaudoPrintPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/laudos/:id/print" element={<LaudoPrintPage />} />
           <Route element={<AppLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/clientes" element={<ClientesPage />} />

@@ -75,8 +75,8 @@ const LaudoDetailPage = () => {
             <Button variant="outline" onClick={() => navigate("/laudos")} className="gap-2">
               <ArrowLeft size={16} /> Voltar
             </Button>
-            <Button onClick={handleExportPdf} disabled={exporting} className="gap-2">
-              <FileDown size={16} /> {exporting ? "Gerando..." : "Exportar PDF"}
+            <Button onClick={() => navigate(`/laudos/${id}/print`)} className="gap-2">
+              <FileDown size={16} /> Exportar PDF
             </Button>
           </div>
         }
