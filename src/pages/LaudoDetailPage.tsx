@@ -7,7 +7,7 @@ import { getLaudos, getObras, getClientes, getEquipe } from "@/lib/store";
 import { Laudo, Obra, Cliente, MembroEquipe } from "@/lib/types";
 import { ArrowLeft, FileDown } from "lucide-react";
 import { toast } from "sonner";
-import { generateLaudoPdf } from "@/lib/generateLaudoPdf";
+import { generateLaudoDocx } from "@/lib/generateLaudoDocx";
 
 const LaudoDetailPage = () => {
   const { id } = useParams();
@@ -19,14 +19,14 @@ const LaudoDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  const handleExportPdf = async () => {
+  const handleExportDocx = async () => {
     if (!laudo) return;
     setExporting(true);
     try {
-      await generateLaudoPdf(laudo, obra, cliente, membros);
-      toast.success("PDF exportado com sucesso!");
+      await generateLaudoDocx(laudo, obra, cliente, membros);
+      toast.success("Documento Word exportado com sucesso!");
     } catch (e: any) {
-      toast.error("Erro ao gerar PDF: " + e.message);
+      toast.error("Erro ao gerar DOCX: " + e.message);
     } finally {
       setExporting(false);
     }
@@ -75,8 +75,8 @@ const LaudoDetailPage = () => {
             <Button variant="outline" onClick={() => navigate("/laudos")} className="gap-2">
               <ArrowLeft size={16} /> Voltar
             </Button>
-            <Button onClick={() => navigate(`/laudos/${id}/print`)} className="gap-2">
-              <FileDown size={16} /> Exportar PDF
+            <Button onClick={handleExportDocx} disabled={exporting} className="gap-2">
+              <FileDown size={16} /> {exporting ? "Gerando..." : "Exportar Word"}
             </Button>
           </div>
         }
